@@ -23,13 +23,13 @@ class ConfigData():
         self.getConfigFromFile()
         
     def show(self):
-        print self.ssh_host
-        print self.ssh_port
-        print self.ssh_user
-        print self.ssh_passwd
-        print self.currentDir
-        print self.remoteDir
-        print self.arrFileExcept
+        print (self.ssh_host)
+        print (self.ssh_port)
+        print (self.ssh_user)
+        print (self.ssh_passwd)
+        print (self.currentDir)
+        print (self.remoteDir)
+        print (self.arrFileExcept)
  
     def getSectiontText(self,path):
         retText = ""
@@ -57,12 +57,12 @@ class ConfigData():
         except ImportError:
             import xml.etree.ElementTree as ET    
         if not os.path.exists(self.fileName) : 
-            print "file ", self.fileName, " not exists"
+            print ("file ", self.fileName, " not exists")
             return None        
         try:
             self.docTree = ET.ElementTree(file=self.fileName)            
-        except Exception,e:
-            print "%s is NOT well-formed : %s "%(self.fileName,e)
+        except Exception as e:
+            print ("%s is NOT well-formed : %s "%(self.fileName,e))
             return None
         
         self.ssh_host = self.getSectiontText("host").strip()
@@ -90,13 +90,13 @@ def getSSHInstance(cnf):
 def doScp(srcPath,cnf):
     bRet = False    
     try:
-        print "srcPath : {0}".format(srcPath)
+        print ("srcPath : {0}".format(srcPath))
         if srcPath in cnf.arrFileExcept :
-            print "{0} in arrFilesExcept".format(srcPath)
+            print ("{0} in arrFilesExcept".format(srcPath))
             return bRet        
         srcFile = os.path.relpath(srcPath,cnf.currentDir)
         dstFile = posixpath.join(cnf.remoteDir,srcFile.replace(os.path.sep, posixpath.sep))
-        print dstFile        
+        print (dstFile)        
         print("doScp : {0},{1}".format(srcPath,dstFile))
         if not os.path.exists(srcPath) :
             print("doScp : file {0} not exist".format(srcPath))
@@ -104,7 +104,7 @@ def doScp(srcPath,cnf):
         else :
             ssh = getSSHInstance(cnf)
             strcmd = "mkdir -p {0}".format(posixpath.split(dstFile)[0])
-            print strcmd
+            print (strcmd)
             stdin,stdout,stderr=ssh.exec_command(strcmd)
             sftp = paramiko.SFTPClient.from_transport(ssh.get_transport())
             sftp = ssh.open_sftp()
@@ -112,8 +112,8 @@ def doScp(srcPath,cnf):
             ssh.close()
             bRet = True
     except :
-        print "error occur"        
-        print traceback.format_exc()
+        print ("error occur")        
+        print (traceback.format_exc())
         bRet = False
     return bRet      
 
@@ -121,11 +121,11 @@ def doRemoteCmd(cnf,strcmd):
     bRet = False    
     try:        
         ssh = getSSHInstance(cnf)        
-        print strcmd
+        print (strcmd)
         stdin,stdout,stderr=ssh.exec_command(strcmd)        
         bRet = True
     except :        
-        print traceback.format_exc()
+        print (traceback.format_exc())
         bRet = False
     return bRet 
 
@@ -145,42 +145,42 @@ class SyncHandler(FileSystemEventHandler):
             srcPath = os.path.abspath(event.src_path)        
             srcFile = os.path.relpath(srcPath,self.conf.currentDir)
             dstFile = posixpath.join(self.conf.remoteDir,srcFile.replace(os.path.sep, posixpath.sep))
-            print dstFile
+            print (dstFile)
             if dstFile :
                 strcmd = "rm -f {0}".format(dstFile)
                 doRemoteCmd(self.conf, strcmd)
         return None        
         
     def on_modified(self, event):
-        print event.key    
+        print (event.key)    
         self.doFileSync(event)
         
     def on_deleted(self, event):
-        print event.key
+        print (event.key)
         self.doFileDelete(event)
     
     def on_moved(self,event):
-        print event.key,"moved"
+        print (event.key,"moved")
         self.doFileDelete(event)
         self.doFileSync(event)        
   
 if __name__ == "__main__":    
     if len(sys.argv) < 2 :
-        print "usage : %s conf.xml" % sys.argv[0]
+        print ("usage : %s conf.xml" % sys.argv[0])
         sys.exit(1)
     confFile = sys.argv[1]
         
     conf = ConfigData(confFile)
     conf.show()
     
-    print conf.arrFileExcept
+    print (conf.arrFileExcept)
     
     # do sync in start
     for root, dirs, files in os.walk(conf.currentDir):
         for name in files:            
             t_path = os.path.join(root, name)
             t_path = os.path.abspath(t_path)
-            print t_path, name
+            print (t_path, name)
             doScp(t_path,conf)
     # do sync on modify
     event_handler = SyncHandler(conf)
